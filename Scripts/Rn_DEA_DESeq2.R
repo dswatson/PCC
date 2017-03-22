@@ -57,14 +57,15 @@ res <- function(contrast) {
   kegg$p2g <- kegg$p2g[overlap > 1L]
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', n))
-  res <- aggregateGeneSet(res, cilia, 2L^14L)     
+  res <- aggregateGeneSet(res, kegg$p2g, 2L^14L)     
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE) 
   qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
            logFC = log.fold.change,
            p.value = p.Value) %>%
     mutate(Rank = row_number()) %>%
-    select(Rank, Pathway, logFC, p.value, FDR) %>%
+    inner_join(kegg$anno, by = 'Pathway') %>%
+    select(Rank, Pathway, Description, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/DESeq2/', 
                   contrast[2], '_vs_', contrast[3], '.Pathways.csv'))
   
