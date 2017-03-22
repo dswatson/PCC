@@ -18,25 +18,25 @@ files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
 txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
 
 # Results function
-res <- function(cont) {
+res <- function(contrast) {
   
   # Genes
   dds <- dds[rowSums(counts(dds)) > 1L, ]
   dds <- DESeq(dds)
-  as.data.frame(results(dds, filterfun = ihw, alpha = 0.05, contrast = cont)) %>%
+  as.data.frame(results(dds, filterfun = ihw, alpha = 0.05, contrast = contrast)) %>%
     mutate(EnsemblID = rownames(dds),
-           AvgExpr = log2(baseMean)) %>%
+             AvgExpr = log2(baseMean)) %>%
     na.omit() %>%
     rename(logFC = log2FoldChange,
-           p.value = pvalue,
-           FDR = padj) %>%
+         p.value = pvalue,
+             FDR = padj) %>%
     arrange(p.value) %>%
     mutate(Rank = row_number()) %>%
     inner_join(anno, by = 'EnsemblID') %>%
     select(Rank, EnsemblID, GeneSymbol, Description, 
            AvgExpr, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/DESeq2/', 
-                  cont[2], '_vs_', cont[3], '.Genes.csv'))
+                  contrast[2], '_vs_', contrast[3], '.Genes.csv'))
   
   # Pathways
   n <- ncol(dds)
@@ -66,7 +66,7 @@ res <- function(cont) {
     mutate(Rank = row_number()) %>%
     select(Rank, Pathway, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/DESeq2/', 
-                  cont[2], '_vs_', cont[3], '.Pathways.csv'))
+                  contrast[2], '_vs_', contrast[3], '.Pathways.csv'))
   
 }
 
