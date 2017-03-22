@@ -40,7 +40,7 @@ res <- function(dds, cont) {
   n <- ncol(dds)
   p <- ncol(model.matrix(design(dds), colData(dds)))
   max_rps <- max(table(pheno[[cont[1]]]))
-  keep <- rowSums(cpm(counts(dds)) >= 1L) >= max_rps
+  keep <- rowSums(cpm(counts(dds)) > 1L) >= max_rps
   dds <- dds[keep, ]
   dds_res <- results(dds, independentFiltering = FALSE)
   mean <- dds_res$log2FoldChange

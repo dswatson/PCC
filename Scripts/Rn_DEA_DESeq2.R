@@ -41,7 +41,7 @@ res <- function(contrast) {
   # Pathways
   n <- ncol(dds)
   p <- ncol(model.matrix(design(dds), colData(dds)))
-  keep <- rowSums(cpm(counts(dds)) >= 1L) >= 3L
+  keep <- rowSums(cpm(counts(dds)) > 1L) >= 3L
   dds <- dds[keep, ]
   dds_res <- results(dds, independentFiltering = FALSE)
   mean <- dds_res$log2FoldChange

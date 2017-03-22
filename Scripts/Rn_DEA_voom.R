@@ -19,7 +19,7 @@ txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread,
                 countsFromAbundance = 'lengthScaledTPM')
 
 # Filter, transform counts
-keep <- rowSums(cpm(txi$counts) >= 1L) >= 3L
+keep <- rowSums(cpm(txi$counts) > 1L) >= 3L
 y <- DGEList(txi$counts[keep, ])
 y <- calcNormFactors(y)
 overlap <- sapply(kegg$p2g, function(g) sum(g %in% rownames(y)))
