@@ -42,12 +42,12 @@ res <- function(coef) {
     fwrite(paste0('./Results/Rat/', coef, '.Genes.csv'))
 
   # Pathways
-  resid_mat <- residuals(fit, v$E)
   mean <- fit$coefficients[, coef] 
   SD <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
   sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
   sd.alpha[is.infinite(sd.alpha)] <- 1L
   dof <- fit$df.total
+  resid_mat <- residuals(fit, v$E)
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', ncol(resid_mat)))
   res <- aggregateGeneSet(res, kegg$p2g, 2L^14L)           
@@ -63,23 +63,18 @@ res <- function(coef) {
 
 }
 
-# Normoxia vs. hypoxia
-clin <- clin %>%
-  mutate(Condition = relevel(as.factor(Condition), ref = 'Normoxia'))
-des <- model.matrix(~ Condition, data = clin)
+# Fit model
+des <- model.matrix(~ 0 + Condition, data = clin)
 colnames(des) <- gsub('Condition', '', colnames(des))
 v <- voom(y, des)
-fit <- eBayes(lmFit(v, des))
-res('Hypoxia')
+fit <- lmFit(v, des)
+cm <- makeContrasts('Hypoxia_vs_Normoxia' = Hypoxia - Normoxia,
+                           'IFT88_vs_Scr' = IFT88_KD - Scr_KD,
+                            'SDHB_vs_Scr' = SDHB_KD - Scr_KD,
+                             'VHL_vs_Scr' = VHL_KD - Scr_KD, levels = colnames(des))
+fit <- eBayes(contrasts.fit(fit, cm))
 
-# Knock downs
-clin <- clin %>%
-  mutate(Condition = relevel(Condition, ref = 'Scr_KD'))
-des <- model.matrix(~ Condition, data = clin)
-colnames(des) <- gsub('Condition', '', colnames(des))
-coefs <- colnames(des)[3:6]
-v <- voom(y, des)
-fit <- eBayes(lmFit(v, des))
-foreach (coef = coefs) %dopar% res(coef)
+# Export
+foreach(coef = colnames(cm)) %dopar% res(coef)
 
 

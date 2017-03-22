@@ -38,11 +38,11 @@ res <- function(comp, coef) {
   # Pathways
   overlap <- sapply(cilia, function(g) sum(g %in% rownames(fit)))
   cilia <- cilia[overlap > 1L]
-  resid_mat <- residuals(fit, v$E)
   mean <- fit$coefficients[, coef] 
   SD <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
   sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
   dof <- fit$df.total
+  resid_mat <- residuals(fit, v$E)
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', ncol(resid_mat)))
   res <- aggregateGeneSet(res, cilia, 2L^14L)         
