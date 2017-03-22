@@ -6,7 +6,7 @@ library(edgeR)
 library(qusage)
 library(dplyr)
 library(doMC)
-registerDoMC(4)
+registerDoMC(3)
 set.seed(123)
 
 # Import data
@@ -30,7 +30,9 @@ res <- function(dds, cont) {
              FDR = padj) %>%
     arrange(p.value) %>%
     mutate(Rank = row_number()) %>%
-    select(Rank, EnsemblID, AvgExpr, logFC, p.value, FDR) %>%
+    inner_join(anno, by = 'EnsemblID') %>%
+    select(Rank, EnsemblID, GeneSymbol, Description, 
+           AvgExpr, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Human/DESeq2/', cont[1], '.', 
                   cont[2], '_vs_', cont[3], '.Genes.csv'))
   
@@ -61,7 +63,7 @@ res <- function(dds, cont) {
              logFC = log.fold.change,
            p.value = p.Value) %>%
     mutate(Rank = row_number()) %>%
-    select(Rank, Pathway:FDR) %>%
+    select(Rank, Pathway, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Human/DESeq2/', cont[1], '.',
                   cont[2], '_vs_', cont[3], '.Pathways.csv'))
   
