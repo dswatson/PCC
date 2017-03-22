@@ -18,7 +18,7 @@ files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
 txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
 
 # Results function
-res <- function(contrast) {
+res <- function(cont) {
   
   # Genes
   dds <- dds[rowSums(counts(dds)) > 1L, ]
@@ -41,8 +41,7 @@ res <- function(contrast) {
   # Pathways
   n <- ncol(dds)
   p <- ncol(model.matrix(design(dds), colData(dds)))
-  max_rps <- max(table(pheno[[cont[1]]]))
-  keep <- rowSums(cpm(counts(dds)) >= 1L) >= max_rps
+  keep <- rowSums(cpm(counts(dds)) >= 1L) >= 3L
   dds <- dds[keep, ]
   dds_res <- results(dds, independentFiltering = FALSE)
   mean <- dds_res$log2FoldChange
