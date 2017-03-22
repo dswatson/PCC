@@ -72,7 +72,7 @@ res <- function(contrast) {
 }
 
 # Execute in parallel
-dds <- DESeqDataSetFromTximport(txi, colData = pheno, design = ~ Condition)
+dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Condition)
 cont_list <- list(c('Condition', 'Hypoxia', 'Normoxia'),
                   c('Condition', 'IFT88_KD', 'Scr_KD'),
                   c('Condition', 'SDHB_KD', 'Scr_KD'),
