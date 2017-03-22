@@ -61,7 +61,7 @@ res <- function(comp, coef) {
 pheno <- clin %>% filter(Paired == 'Paired')
 cnts <- txi$counts[, match(pheno$Sample, colnames(txi$counts))]
 max_rps <- max(table(pheno$Tissue))
-keep <- rowSums(cpm(cnts) >= 1L) >= max_rps
+keep <- rowSums(cpm(cnts) > 1L) >= max_rps
 y <- DGEList(cnts[keep, ])
 y <- calcNormFactors(y)
 des <- model.matrix(~ Subject + Tissue, data = pheno)
@@ -78,7 +78,7 @@ pheno <- clin %>%
          Location = relevel(as.factor(Location), ref = 'Adrenal'))
 cnts <- txi$counts[, match(pheno$Sample, colnames(txi$counts))]
 max_rps <- max(table(pheno$Mutation))
-keep <- rowSums(cpm(cnts) >= 1L) >= max_rps
+keep <- rowSums(cpm(cnts) > 1L) >= max_rps
 y <- DGEList(cnts[keep, ])
 y <- calcNormFactors(y)
 des <- model.matrix(~ Mutation, data = pheno)
