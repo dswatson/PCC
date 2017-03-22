@@ -6,7 +6,7 @@ library(edgeR)
 library(qusage)
 library(dplyr)
 library(doMC)
-registerDoMC(3)
+registerDoMC(4)
 set.seed(123)
 
 # Import data
@@ -94,6 +94,7 @@ res(dds, contrast)
 
 # Location
 design(dds) <- formula(~ Location)
+dds$Location <- droplevels(dds$Location)
 cont_list <- list(c('Location', 'Abdominal', 'Adrenal'),
                   c('Location', 'HNPGL', 'Adrenal'))
 foreach(contrast = cont_list) %dopar% res(dds, contrast)
