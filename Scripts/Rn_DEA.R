@@ -58,7 +58,7 @@ res <- function(coef) {
              logFC = log.fold.change,
            p.value = p.Value) %>%
     inner_join(kegg$anno, by = 'Pathway') %>%
-    select(Rank, Pathway, Description, logFC:FDR) %>%
+    select(Rank, Pathway, Description, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/', coef, '.Pathways.csv'))
 
 }
