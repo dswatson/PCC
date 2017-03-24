@@ -11,9 +11,9 @@ set.seed(123)
 
 # Import data
 anno <- fread('./Data/Rn.anno.csv')
-kegg <- readRDS('./Data/Rn.kegg.rds')
+cilia <- readRDS('./Data/Rn.cilia.rds')
 clin <- fread('./Data/Rn.Clinical.csv') 
-t2g <- fread('./Data/Rn83.t2g.csv')
+t2g <- fread('./Data/Rn83.t2g_Symbol.csv')
 files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
 txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread, 
                 countsFromAbundance = 'lengthScaledTPM')
@@ -22,8 +22,8 @@ txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread,
 keep <- rowSums(cpm(txi$counts) > 1L) >= 3L
 y <- DGEList(txi$counts[keep, ])
 y <- calcNormFactors(y)
-overlap <- sapply(kegg$p2g, function(g) sum(g %in% rownames(y)))
-kegg$p2g <- kegg$p2g[overlap > 1L]
+overlap <- sapply(cilia, function(g) sum(g %in% rownames(y)))
+cilia <- cilia[overlap > 1L]
 
 # Results function
 res <- function(coef) {
@@ -33,11 +33,11 @@ res <- function(coef) {
     rename(AvgExpr = AveExpr,
            p.value = P.Value,
                FDR = adj.P.Val) %>%
-    mutate(EnsemblID = rownames(v)) %>%
+    mutate(GeneSymbol = rownames(v)) %>%
     arrange(p.value) %>%
     mutate(Rank = row_number()) %>%
-    inner_join(anno, by = 'EnsemblID') %>%
-    select(Rank, EnsemblID, GeneSymbol, Description, 
+    inner_join(anno, by = 'GeneSymbol') %>%
+    select(Rank, GeneSymbol, Description, 
            AvgExpr, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/voom/', coef, '.Genes.csv'))
 
@@ -50,15 +50,14 @@ res <- function(coef) {
   resid_mat <- residuals(urFit, v$E)
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', ncol(resid_mat)))
-  res <- aggregateGeneSet(res, kegg$p2g, 2L^14L)           
+  res <- aggregateGeneSet(res, cilia, 2L^14L)           
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    
   qsTable(res, number = Inf, sort.by = 'p') %>% 
     mutate(Rank = row_number()) %>%
     rename(Pathway = pathway.name,
              logFC = log.fold.change,
            p.value = p.Value) %>%
-    inner_join(kegg$anno, by = 'Pathway') %>%
-    select(Rank, Pathway, Description, logFC, p.value, FDR) %>%
+    select(Rank, Pathway, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/voom/', coef, '.Pathways.csv'))
 
 }

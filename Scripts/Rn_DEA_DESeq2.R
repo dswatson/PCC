@@ -11,9 +11,9 @@ set.seed(123)
 
 # Import data
 anno <- fread('./Data/Rn.anno.csv')
-kegg <- readRDS('./Data/Rn.kegg.rds')
+cilia <- readRDS('./Data/Rn.cilia.rds')
 clin <- fread('./Data/Rn.Clinical.csv') 
-t2g <- fread('./Data/Rn83.t2g.csv')
+t2g <- fread('./Data/Rn83.t2g_Symbol.csv')
 files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
 txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
 
@@ -24,16 +24,16 @@ res <- function(contrast) {
   dds <- dds[rowSums(counts(dds)) > 1L, ]
   dds <- DESeq(dds)
   as.data.frame(results(dds, filterfun = ihw, alpha = 0.05, contrast = contrast)) %>%
-    mutate(EnsemblID = rownames(dds),
-             AvgExpr = log2(baseMean)) %>%
+    mutate(GeneSymbol = rownames(dds),
+              AvgExpr = log2(baseMean)) %>%
     na.omit() %>%
     rename(logFC = log2FoldChange,
          p.value = pvalue,
              FDR = padj) %>%
     arrange(p.value) %>%
     mutate(Rank = row_number()) %>%
-    inner_join(anno, by = 'EnsemblID') %>%
-    select(Rank, EnsemblID, GeneSymbol, Description, 
+    inner_join(anno, by = 'GeneSymbol') %>%
+    select(Rank, GeneSymbol, Description, 
            AvgExpr, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/DESeq2/', 
                   contrast[2], '_vs_', contrast[3], '.Genes.csv'))
@@ -53,19 +53,18 @@ res <- function(contrast) {
   cnts <- log2((counts(dds) + 0.5) / nf * 1e6L)
   signal_mat <- log2((assays(dds)[['mu']] + 0.5) / nf * 1e6L)
   resid_mat <- cnts - signal_mat
-  overlap <- sapply(kegg$p2g, function(g) sum(g %in% rownames(dds)))
-  kegg$p2g <- kegg$p2g[overlap > 1L]
+  overlap <- sapply(cilia, function(g) sum(g %in% rownames(dds)))
+  cilia <- cilia[overlap > 1L]
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', n))
-  res <- aggregateGeneSet(res, kegg$p2g, 2L^14L)     
+  res <- aggregateGeneSet(res, cilia, 2L^14L)     
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE) 
   qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
-           logFC = log.fold.change,
+             logFC = log.fold.change,
            p.value = p.Value) %>%
     mutate(Rank = row_number()) %>%
-    inner_join(kegg$anno, by = 'Pathway') %>%
-    select(Rank, Pathway, Description, logFC, p.value, FDR) %>%
+    select(Rank, Pathway, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/DESeq2/', 
                   contrast[2], '_vs_', contrast[3], '.Pathways.csv'))
   
