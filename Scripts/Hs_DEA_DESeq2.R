@@ -11,7 +11,7 @@ set.seed(123)
 
 # Import data
 anno <- fread('./Data/Hs.anno.csv')
-cilia <- readRDS('./Data/cilia.rds')
+cilia <- readRDS('./Data/Hs.cilia.rds')
 t2g <- fread('./Data/Hs79.t2g.csv')
 clin <- fread('./Data/Hs.Clinical.csv', stringsAsFactors = TRUE) 
 
