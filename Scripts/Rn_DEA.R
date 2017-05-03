@@ -42,7 +42,8 @@ res <- function(contrast) {
   p <- ncol(model.matrix(design(dds), colData(dds)))
   keep <- rowSums(cpm(counts(dds)) > 1L) >= 3L
   dds <- dds[keep, ]
-  dds_res <- results(dds, independentFiltering = FALSE)
+  dds_res <- results(dds, filterfun = ihw, alpha = 0.05, 
+                     contrast = contrast, independentFiltering = FALSE)
   mean <- dds_res$log2FoldChange
   SD <- dds_res$lfcSE
   sd.alpha <- rep(1L, times = nrow(dds))
