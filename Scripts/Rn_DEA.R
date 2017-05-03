@@ -69,16 +69,18 @@ res <- function(contrast) {
                   '.CiliaPathways.csv'))
   
   # KEGG
-  overlap <- sapply(kegg, function(g) sum(g %in% rownames(dds)))
-  kegg <- kegg[overlap > 1L]
+  overlap <- sapply(kegg$p2g, function(g) sum(g %in% rownames(dds)))
+  kegg$p2g <- kegg$p2g[overlap > 1L]
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', n))
-  res <- aggregateGeneSet(res, kegg, 2L^14L)     
+  res <- aggregateGeneSet(res, kegg$p2g, 2L^14L)     
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE) 
   qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
              logFC = log.fold.change,
            p.value = p.Value) %>%
+    inner_join(kegg$anno, by = 'Pathway') %>%
+    select(Pathway, Description, logFC, p.value, FDR) %>%
     fwrite(paste0('./Results/Rat/', contrast[2], '_vs_', contrast[3], 
                   '.KEGGPathways.csv'))
   
