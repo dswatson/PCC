@@ -90,9 +90,9 @@ res <- function(contrast) {
 # Execute in parallel
 dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Condition)
 cont_list <- list(c('Condition', 'Hypoxia', 'Normoxia'),
-                  c('Condition', 'IFT88_KD', 'Scr_KD'),
-                  c('Condition', 'SDHB_KD', 'Scr_KD'),
-                  c('Condition', 'VHL_KD', 'Scr_KD'))
+                  c('Condition', 'IFT88_KD', 'Scrambled'),
+                  c('Condition', 'SDHB_KD', 'Scrambled'),
+                  c('Condition', 'VHL_KD', 'Scrambled'))
 foreach(contrast = cont_list) %dopar% res(contrast)
 
 
