@@ -37,7 +37,6 @@ res <- function(dds, cont) {
   
   # Pathways
   n <- ncol(dds)
-  g <- nrow(dds)
   p <- ncol(model.matrix(design(dds), colData(dds)))
   max_rps <- max(table(pheno[[cont[1]]]))
   keep <- rowSums(cpm(counts(dds)) > 1L) >= max_rps
@@ -45,8 +44,8 @@ res <- function(dds, cont) {
   dds_res <- results(dds, independentFiltering = FALSE)
   mean <- dds_res$log2FoldChange
   SD <- dds_res$lfcSE
-  sd.alpha <- rep(1L, times = g)
-  dof <- rep((ncol(dds) - p), times = g) 
+  sd.alpha <- rep(1L, times = nrow(dds))
+  dof <- rep((ncol(dds) - p), times = nrow(dds)) 
   names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(dds)
   cnts <- counts(dds, normalized = TRUE)
   cnts <- cpm(cnts, log = TRUE, prior.count = 1L)
