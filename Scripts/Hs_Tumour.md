@@ -24,6 +24,9 @@ library(edgeR)
 library(qusage)
 library(bioplotr)
 library(dplyr)
+
+# Set seed
+set.seed(123)
 ```
 
 Import Data
@@ -61,7 +64,7 @@ dim(mat)
 
     ## [1] 17198    24
 
-EDA will proceed with 17,464 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this filter when testing for pathway enrichment, however. See below.)
+EDA will proceed with 17,464 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this EDA filter when testing for pathway enrichment, however. See below.)
 
 Exploratory Data Analysis
 =========================
@@ -88,7 +91,7 @@ Tissue type is clearly the dominant source of variation in the data. (Good!)
 With this knowledge in hand, we can move on to density and box plots, coloured by tissue type.
 
 ``` r
-lcpm <- expression(log[2]~'-CPM')
+lcpm <- expression(log[2]*'-CPM')
 plot_density(mat, group = list(Tissue = clin$Tissue), xlab = lcpm) 
 ```
 
@@ -155,7 +158,7 @@ dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Subject + Tissue
 dds <- DESeq(dds)
 ```
 
-We modify the outputs to standardise the data frame for downstream visualisations and add the relevant annotations.
+We modify the default results output to standardise the data frame for downstream visualisations and add the relevant annotations.
 
 ``` r
 top_genes <- as.data.frame(results(dds, filterfun = ihw, alpha = 0.05, 
