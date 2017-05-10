@@ -94,24 +94,20 @@ top_cilia_genes <- top$GeneSymbol[seq_len(100)]
 # Heatmap
 top_mat <- mat[top_cilia_genes, clin$Condition %in% c('Hypoxia', 'Normoxia')]
 aheatmap(top_mat, distfun = 'pearson', scale = 'row', col = rb, hclustfun = 'average',
-         main = 'Top 100 Cilia-Related Genes', cellwidth = 20,
+         main = 'Top 100 Cilia-Related Genes', cellwidth = 20, cexCol = 1,
          annCol = list('Condition' = clin[Condition %in% c('Hypoxia', 'Normoxia'), Condition]),
-         annColors = list(pal_npg()(2)[c(2, 1)]), border_color = 'grey60')
+         annColors = list(pal_npg()(2)), border_color = 'grey60')
 
 # Identify significantly enriched KEGG pathways
+kegg_mat <- eigengenes(mat, kegg[[1]])
+anno <- kegg[[2]] %>% filter(Pathway %in% rownames(kegg_mat))
+rownames(kegg_mat) <- anno$Description
 top <- fread('./Results/Rat/Hypoxia_vs_Normoxia.KEGGpathways.csv') %>%
-  filter(FDR <= 0.01)  # Alternatively: top 100 by F-test and include all 12 samples?
-kegg_list <- lapply(top$Pathway, function(p) kegg[[1]][p])
-kegg_anno <- kegg[[2]] %>% filter(Pathway %in% top$Pathway)
-names(kegg_list) <- paste(kegg_anno$Pathway, kegg_anno$Description)
-kegg_mat <- eigengenes(mat, kegg_list)
-kegg_mat <- kegg_mat[, clin$Condition %in% c('Hypoxia', 'Normoxia')]
-aheatmap(kegg_mat, distfun = 'pearson', scale = 'row', col = rb, hclustfun = 'average',
-         main = 'KEGG Pathway Eigengenes', cellwidth = 20,
+  filter(FDR <= 0.01) # Alternatively: top 100 by F-test and include all 12 samples?
+tmp <- kegg_mat[top$Description, clin$Condition %in% c('Hypoxia', 'Normoxia')]
+aheatmap(tmp, distfun = 'pearson', scale = 'row', col = rb, hclustfun = 'average',
+         main = 'Enriched KEGG Pathway Eigengenes', cellwidth = 20, cexCol = 1,
          annCol = list('Condition' = clin[Condition %in% c('Hypoxia', 'Normoxia'), Condition]),
-         annColors = list(pal_npg()(2)[c(2, 1)]), border_color = 'grey60')
-
-
-
+         annColors = list(pal_npg()(2)), border_color = 'grey60')
 
 
