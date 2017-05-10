@@ -43,7 +43,6 @@ t2g <- fread('./Data/Hs79.t2g.csv')
 anno <- fread('./Data/Hs.anno.csv')
 files <- file.path('./Data/Counts/Human', clin$Sample, 'abundance.tsv')
 txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
-colnames(txi$counts) <- clin$Sample
 ```
 
 Filter, Transform Counts
@@ -57,6 +56,7 @@ keep <- rowSums(cpm(txi$counts) >= 1) > 12
 mat <- DGEList(txi$counts[keep, ])
 mat <- calcNormFactors(mat, method = 'RLE')
 mat <- cpm(mat, log = TRUE, prior.count = 1)
+colnames(mat) <- clin$Sample
 
 # Check dimensionality
 dim(mat)
@@ -64,7 +64,7 @@ dim(mat)
 
     ## [1] 17198    24
 
-EDA will proceed with 17,464 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this EDA filter when testing for pathway enrichment, however. See below.)
+EDA will proceed with 17,198 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this EDA filter when testing for pathway enrichment, however. See below.)
 
 Exploratory Data Analysis
 =========================
