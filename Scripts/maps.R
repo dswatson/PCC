@@ -60,7 +60,7 @@ df <- map_df(seq_along(cilia), function(p) {
 
 
 # Rat
-t2g <- fread('./Data/Rn83.t2g.csv')
+t2g <- fread('./Data/Rn83.t2g_Ensembl.csv')
 mart <- useDataset('rnorvegicus_gene_ensembl', mart = useMart('ensembl'))
 e2e <- getBM(attributes = c('ensembl_gene_id', 'entrezgene'), 
                 filters = 'ensembl_gene_id', 
@@ -76,11 +76,10 @@ kegg <- getGeneKEGGLinks(species.KEGG = 'rno') %>%
   data.table()
 anno <- getKEGGPathwayNames(species.KEGG = 'rno', remove.qualifier = TRUE) %>%
   rename(Pathway = PathwayID) 
-kegg <- kegg %>% inner_join(e2e, by = 'entrez_id')
 kegg_list <- lapply(unique(kegg$Pathway), function(p) kegg[Pathway == p, ensembl_id])
 names(kegg_list) <- unique(kegg$Pathway)
 kegg_list <- list('p2g' = kegg_list, 'anno' = anno)
-saveRDS(kegg_list, './Data/kegg.Rn.rds')
+saveRDS(kegg_list, './Data/Rn.kegg.rds')
 
 # Turn pathway .tab files into well formatted .rds lists
 dir <- './Data/Rn.pathways/'
