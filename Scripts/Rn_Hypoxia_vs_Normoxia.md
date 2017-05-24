@@ -8,7 +8,7 @@ Rat Gene Knockout
 -   [Pathway Enrichment](#pathway-enrichment)
 -   [Figures](#figures)
 
-All analysis was conducted in R version 3.3.3 using the following script. Computations were performed on a MacBook Pro with 16GB of RAM.
+All analysis was conducted in R version 3.4.0 using the following script. Computations were performed on a MacBook Pro with 16GB of RAM and an i7 quad-core processor.
 
 If you haven't already installed the `bioplotr` package, you'll need to do so to reproduce the figures below.
 
@@ -40,17 +40,17 @@ anno <- fread('./Data/Rn.anno.csv')
 clin <- fread('./Data/Rn.Clinical.csv') 
 t2g <- fread('./Data/Rn83.t2g_Symbol.csv')
 files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
-txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
+txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 ```
 
 Filter, Transform Counts
 ========================
 
-Before conducting exploratory data analysis (EDA), we remove genes with less than one count per million (CPM) in three libraries. This ensures that every gene is expressed in at least one condition. This threshold follows the filtering guidelines of [Robinson et al. (2010)](https://www.ncbi.nlm.nih.gov/pubmed/19910308). Counts are then RLE normalised ([Anders & Huber, 2010](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106)) and converted to the log<sub>2</sub>-CPM scale to stabilise variance across the omic range.
+Before conducting exploratory data analysis (EDA), we remove genes with less than one count per million (CPM) in at least three libraries. This ensures that every gene is expressed in at least one condition. This threshold follows the filtering guidelines of [Robinson et al. (2010)](https://www.ncbi.nlm.nih.gov/pubmed/19910308). Counts are then RLE normalised ([Anders & Huber, 2010](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106)) and converted to the log<sub>2</sub>-CPM scale to stabilise variance across the omic range.
 
 ``` r
 # Filter, transform counts
-keep <- rowSums(cpm(txi$counts) >= 1) > 3
+keep <- rowSums(cpm(txi$counts) > 1) >= 3
 mat <- DGEList(txi$counts[keep, ])
 mat <- calcNormFactors(mat, method = 'RLE')
 mat <- cpm(mat, log = TRUE, prior.count = 1)
@@ -60,7 +60,7 @@ colnames(mat) <- clin$Sample
 dim(mat)
 ```
 
-    ## [1] 13490    18
+    ## [1] 13621    18
 
 EDA will proceed with 13,490 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this EDA filter when testing for pathway enrichment, however. See below.)
 
@@ -91,7 +91,7 @@ We see here that the data are indeed approximately normal following log<sub>2</s
 To test that theory, we build a sample similarity matrix by calculating the pairwise [Euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance) between all samples in the data. This matrix is then visualised as a heatmap and used to generate a hierarchical clustering dendrogram.
 
 ``` r
-plot_similarity(mat, anno = list(Condition = clin$Condition))
+plot_similarity(mat, group = list(Condition = clin$Condition))
 ```
 
 <p align='center'>
@@ -160,7 +160,7 @@ How many genes are differentially expressed at 1% FDR?
 sum(top_genes$FDR <= 0.01)
 ```
 
-    ## [1] 3820
+    ## [1] 3830
 
 What proportion of all genes that passed independent filtering does that represent?
 
@@ -168,7 +168,7 @@ What proportion of all genes that passed independent filtering does that represe
 sum(top_genes$FDR <= 0.01) / nrow(top_genes)
 ```
 
-    ## [1] 0.2660538
+    ## [1] 0.266546
 
 Over a quarter of all genes are differentially expressed between these two conditions, indicating a strong transcriptomic signal distinguishing hypoxia from normoxia samples.
 
@@ -263,7 +263,7 @@ for (p in seq_along(cilia)) {
 }
 
 # Plot results
-plot_heatmap(pathway_mat, anno = list(Condition = clin$Condition), 
+plot_heatmap(pathway_mat, group = list(Condition = clin$Condition), 
              title = 'Cilia Related Pathways')
 ```
 
