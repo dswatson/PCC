@@ -8,7 +8,7 @@ Human Tumour Data
 -   [Cilia Pathway Enrichment](#cilia-pathway-enrichment)
 -   [Figures](#figures)
 
-All analysis was conducted in R version 3.3.3 using the following script. Computations were performed on a MacBook Pro with 16GB of RAM.
+All analysis was conducted in R version 3.4.0 using the following script. Computations were performed on a MacBook Pro with 16GB of RAM and an i7 quad-core processor.
 
 If you haven't already installed the `bioplotr` package, you'll need to do so to reproduce the figures below.
 
@@ -38,21 +38,22 @@ For this portion of the study, we restrict our focus to paired samples.
 
 ``` r
 # Import data
-clin <- fread('./Data/Hs.Clinical.csv') %>% filter(Paired == 'Paired')
+clin <- fread('./Data/Hs.Clinical.csv') %>% 
+  filter(Paired == 'Paired')
 t2g <- fread('./Data/Hs79.t2g.csv')
 anno <- fread('./Data/Hs.anno.csv')
 files <- file.path('./Data/Counts/Human', clin$Sample, 'abundance.tsv')
-txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
+txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 ```
 
 Filter, Transform Counts
 ========================
 
-Before conducting exploratory data analysis (EDA), we remove genes with less than one count per million (CPM) in twelve libraries. This ensures that every gene is expressed in at least one of the two tissue types (tumour and adrenal). This threshold follows the filtering guidelines of [Robinson et al. (2010)](https://www.ncbi.nlm.nih.gov/pubmed/19910308). Counts are then RLE normalised ([Anders & Huber, 2010](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106)) and converted to the log<sub>2</sub>-CPM scale to stabilise variance across the omic range.
+Before conducting exploratory data analysis (EDA), we remove genes with less than one count per million (CPM) in at least twelve libraries. This ensures that every gene is expressed in at least one of the two tissue types (tumour and adrenal). This threshold follows the filtering guidelines of [Robinson et al. (2010)](https://www.ncbi.nlm.nih.gov/pubmed/19910308). Counts are then RLE normalised ([Anders & Huber, 2010](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106)) and converted to the log<sub>2</sub>-CPM scale to stabilise variance across the omic range.
 
 ``` r
 # Filter, transform counts
-keep <- rowSums(cpm(txi$counts) >= 1) > 12
+keep <- rowSums(cpm(txi$counts) > 1) >= 12
 mat <- DGEList(txi$counts[keep, ])
 mat <- calcNormFactors(mat, method = 'RLE')
 mat <- cpm(mat, log = TRUE, prior.count = 1)
@@ -62,7 +63,7 @@ colnames(mat) <- clin$Sample
 dim(mat)
 ```
 
-    ## [1] 17198    24
+    ## [1] 17464    24
 
 EDA will proceed with 17,198 genes. (Note that gene filtering is performed separately for differential expression analysis. We will make use of this EDA filter when testing for pathway enrichment, however. See below.)
 
@@ -112,7 +113,7 @@ We see here that the data are indeed approximately normal following our preproce
 Next we build a sample similarity matrix by calculating the pairwise [Euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance) between all samples in the data. This matrix is then visualised as a heatmap and used to generate a hierarchical clustering dendrogram.
 
 ``` r
-plot_similarity(mat, anno = list(Tissue = clin$Tissue))
+plot_similarity(mat, group = list(Tissue = clin$Tissue))
 ```
 
 <p align='center'>
@@ -181,7 +182,7 @@ How many genes are differentially expressed at 1% FDR?
 sum(top_genes$FDR <= 0.01)
 ```
 
-    ## [1] 7676
+    ## [1] 7615
 
 What proportion of all genes that passed independent filtering does that represent?
 
@@ -189,7 +190,7 @@ What proportion of all genes that passed independent filtering does that represe
 sum(top_genes$FDR <= 0.01) / nrow(top_genes)
 ```
 
-    ## [1] 0.3202737
+    ## [1] 0.3177285
 
 Almost a third of all genes are differentially expressed at 1% FDR, indicating a very strong transcriptomic signal associated with tissue type.
 
@@ -226,6 +227,8 @@ signal_mat <- cpm(signal_mat, log = TRUE, prior.count = 1)
 resid_mat <- cnts - signal_mat
 
 # Run QuSAGE pipeline
+overlap <- sapply(cilia, function(g) sum(g %in% rownames(dds)))
+cilia <- cilia[overlap > 1]
 res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                   labels = rep('resid', n))
 res <- aggregateGeneSet(res, cilia, 2^14)     
@@ -242,7 +245,7 @@ How many pathways are significantly enriched at 1% FDR?
 sum(top_pathways$FDR <= 0.01)
 ```
 
-    ## [1] 17
+    ## [1] 2
 
 What proportion of all pathways does that represent?
 
@@ -250,7 +253,7 @@ What proportion of all pathways does that represent?
 sum(top_pathways$FDR <= 0.01) / nrow(top_pathways)
 ```
 
-    ## [1] 0.3469388
+    ## [1] 0.04081633
 
 About a third of all cilia-related pathways are significantly enriched, once again suggesting a strong transcriptomic signal differentiating between tumour and adrenal samples.
 
@@ -282,7 +285,7 @@ for (p in seq_along(cilia)) {
 }
 
 # Plot results
-plot_heatmap(pathway_mat, anno = list(Tissue = clin$Tissue), 
+plot_heatmap(pathway_mat, group = list(Tissue = clin$Tissue), 
              title = 'Cilia Related Pathways')
 ```
 
@@ -290,4 +293,4 @@ plot_heatmap(pathway_mat, anno = list(Tissue = clin$Tissue),
 <img src="Hs_Tumour_files/figure-markdown_github/heatmap-1.png" style="display: block; margin: auto;" />
 </p>
 
-This heatmap reveals several interesting features of the data. First of all, H21 has been successfully classified with adrenal samples here --- but only just. He is still an outlier among the cohort, and his pathway expression profile looks remarkably similar to those from the nearest clade of tumour samples, which form a clear subgroup within the cancer samples. The rowwise dendrogram also clearly delineates between two groups of pathways, which may provide clues into underlying biological mechanisms of the cilia life cycle in patients with PCC.
+This heatmap reveals several interesting features of the data. First of all, H21 has been successfully classified with adrenal samples here -- but only just. He is still an outlier among the cohort, and his pathway expression profile looks remarkably similar to those from the nearest clade of tumour samples, which form a clear subgroup within the cancer samples. The rowwise dendrogram also clearly delineates between two groups of pathways, which may provide clues into underlying biological mechanisms of the cilia life cycle in patients with PCC.
