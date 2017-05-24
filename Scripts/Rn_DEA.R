@@ -16,7 +16,7 @@ kegg <- readRDS('./Data/Rn.kegg.rds')
 clin <- fread('./Data/Rn.Clinical.csv') 
 t2g <- fread('./Data/Rn83.t2g_Symbol.csv')
 files <- file.path('./Data/Counts/Rat', clin$Sample, 'abundance.tsv')
-txi <- tximport(files, type = 'kallisto', tx2gene = t2g, reader = fread)
+txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 
 # Results function
 res <- function(contrast) {
