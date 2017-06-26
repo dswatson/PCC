@@ -23,8 +23,6 @@ txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
 res <- function(contrast) {
   
   # Genes
-  dds <- dds[rowSums(counts(dds)) > 1, ]
-  dds <- DESeq(dds)
   dds %>%
     results(contrast = contrast, filterfun = ihw, alpha = 0.01, tidy = TRUE) %>%
     na.omit(.) %>%
@@ -93,8 +91,12 @@ res <- function(contrast) {
   
 }
 
-# Execute in parallel
+# Fit genewise model
 dds <- DESeqDataSetFromTximport(txi, colData = clin, design = ~ Condition)
+dds <- dds[rowSums(counts(dds)) > 1, ]
+dds <- DESeq(dds)
+
+# Run QuSAGE and export results in parallel
 cont_list <- list(c('Condition', 'Hypoxia', 'Normoxia'),
                   c('Condition', 'IFT88_KD', 'Scrambled'),
                   c('Condition', 'SDHB_KD', 'Scrambled'),
