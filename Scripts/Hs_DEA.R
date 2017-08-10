@@ -74,16 +74,16 @@ res <- function(dds, cont) {
 
 # Tissue
 pheno <- clin %>% filter(Paired == 'Paired')
-files <- file.path('./Data/Counts/Human', pheno$Sample, 'abundance.tsv')
-txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
+files <- file.path('./Data/Counts/Human', pheno$Sample, 'abundance.h5')
+txi <- tximport(files, type = 'kallisto', tx2gene = t2g)
 dds <- DESeqDataSetFromTximport(txi, colData = pheno, design = ~ Subject + Tissue)
 contrast <- c('Tissue', 'Tumour', 'Adrenal')
 res(dds, contrast)
 
 # Mutation: vs. Neg
 pheno <- clin %>% filter(Tissue == 'Tumour')
-files <- file.path('./Data/Counts/Human', pheno$Sample, 'abundance.tsv')
-txi <- tximport(files, type = 'kallisto', tx2gene = t2g, importer = fread)
+files <- file.path('./Data/Counts/Human', pheno$Sample, 'abundance.h5')
+txi <- tximport(files, type = 'kallisto', tx2gene = t2g)
 dds <- DESeqDataSetFromTximport(txi, colData = pheno, design = ~ Mutation)
 cont_list <- list(c('Mutation', 'Pseudohypoxia', 'Negative'),
                   c('Mutation', 'Ret', 'Negative'),
