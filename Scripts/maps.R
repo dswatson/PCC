@@ -33,15 +33,15 @@ e2e <- getBM(attributes = c('ensembl_gene_id', 'entrezgene'),
                    mart = useDataset(dataset = 'hsapiens_gene_ensembl', 
                                         mart = useMart('ensembl'))) %>%
   rename(ensembl_id = ensembl_gene_id, entrez_id = entrezgene) %>%
-  na.omit() 
+  na.omit(.) 
 kegg <- getGeneKEGGLinks() %>%
   rename(Pathway = PathwayID) %>%
   mutate(entrez_id = as.numeric(GeneID)) %>%
   inner_join(e2e, by = 'entrez_id') %>%
-  data.table()
+  data.table(.)
 anno <- getKEGGPathwayNames(species.KEGG = 'hsa', remove.qualifier = TRUE) %>%
   rename(Pathway = PathwayID) %>%
-  data.table()
+  data.table(.)
 kegg_list <- lapply(unique(kegg$Pathway), function(p) kegg[Pathway == p, ensembl_id])
 names(kegg_list) <- unique(kegg$Pathway)
 kegg_list <- list('p2g' = kegg_list, 'anno' = anno)
@@ -50,13 +50,12 @@ saveRDS(kegg_list, './Data/Hs.kegg.rds')
 # Custom cilia-related pathways
 msig <- read.gmt('./Data/msigdb.v5.2.entrez.gmt')
 cilia <- map(peep, function(x) msig[[x]])  # peep is vector of pathway names
-df <- map_df(seq_along(cilia), function(p) {
-  data_frame(Pathway = names(cilia)[p],
-             entrez_id = cilia[[p]])
-}) %>%
+df <- seq_along(cilia) %>% 
+  map_df(~ data_frame(Pathway = names(cilia)[.x],
+                    entrez_id = cilia[[.x]])) %>%
   mutate(entrez_id = as.numeric(entrez_id)) %>%
   inner_join(e2e, by = 'entrez_id') %>%
-  data.table()
+  data.table(.)
 
 
 # Rat
@@ -68,12 +67,12 @@ e2e <- getBM(attributes = c('ensembl_gene_id', 'entrezgene'),
                    mart = useDataset(dataset = 'rnorvegicus_gene_ensembl', 
                                         mart = useMart('ensembl'))) %>%
   rename(ensembl_id = ensembl_gene_id, entrez_id = entrezgene) %>%
-  na.omit()
+  na.omit(.)
 kegg <- getGeneKEGGLinks(species.KEGG = 'rno') %>%
   rename(Pathway = PathwayID) %>%
   mutate(entrez_id = as.numeric(GeneID)) %>%
   inner_join(e2e, by = 'entrez_id') %>%
-  data.table()
+  data.table(.)
 anno <- getKEGGPathwayNames(species.KEGG = 'rno', remove.qualifier = TRUE) %>%
   rename(Pathway = PathwayID) 
 kegg_list <- lapply(unique(kegg$Pathway), function(p) kegg[Pathway == p, ensembl_id])
@@ -92,9 +91,9 @@ for (file in files) {
     rbind(pways)
 }
 pways <- pways %>% 
-  na.omit() %>% 
-  unique() %>%
-  data.table()
+  na.omit(.) %>% 
+  unique(.) %>%
+  data.table(.)
 pways <- pways[, Count := .N, by = Pathway][Count > 1L]
 pway_list <- lapply(unique(pways$Pathway), function(p) pways[Pathway == p, Gene])
 names(pway_list) <- unique(pways$Pathway)
